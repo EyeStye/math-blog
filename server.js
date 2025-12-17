@@ -1,66 +1,57 @@
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
-const fs = require("fs");
-const path = require("path");
+const { createClient } = require("@libsql/client");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Ensure /data directory exists
-const DATA_DIR = "/data";
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-// SQLite database path
-const dbPath = path.join(DATA_DIR, "posts.db");
-
-// Open SQLite with explicit error handling
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("❌ SQLite open error:", err.message);
-  } else {
-    console.log("✅ SQLite connected:", dbPath);
-  }
+// Turso client (no native SQLite)
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
 app.use(express.json());
 app.use(express.static("."));
 
-// Create table safely AFTER open
-db.serialize(() => {
-  db.run(`
+// Create table
+(async () => {
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS posts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       content TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+})();
+
+// Get posts
+app.get("/posts", async (req, res) => {
+  try {
+    const result = await db.execute(
+      "SELECT content FROM posts ORDER BY id DESC"
+    );
+    res.json(result.rows.map((r) => r.content));
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
 });
 
-// Get all posts
-app.get("/posts", (req, res) => {
-  db.all("SELECT content FROM posts ORDER BY id DESC", [], (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.sendStatus(500);
-    }
-    res.json(rows.map((r) => r.content));
-  });
-});
-
-// Save a post
-app.post("/posts", (req, res) => {
+// Save post
+app.post("/posts", async (req, res) => {
   const { content } = req.body;
   if (!content) return res.sendStatus(400);
 
-  db.run("INSERT INTO posts (content) VALUES (?)", [content], (err) => {
-    if (err) {
-      console.error(err);
-      return res.sendStatus(500);
-    }
+  try {
+    await db.execute({
+      sql: "INSERT INTO posts (content) VALUES (?)",
+      args: [content],
+    });
     res.sendStatus(200);
-  });
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
