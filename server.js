@@ -4,7 +4,7 @@ const { createClient } = require("@libsql/client");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Turso client (no native SQLite)
+// Turso client
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL,
   authToken: process.env.TURSO_AUTH_TOKEN,
@@ -13,15 +13,20 @@ const db = createClient({
 app.use(express.json());
 app.use(express.static("."));
 
-// Create table
+// Create table if not exists
 (async () => {
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS posts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      content TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("✅ Table ready");
+  } catch (err) {
+    console.error("Table creation error:", err);
+  }
 })();
 
 // Get posts
