@@ -102,3 +102,30 @@ document.getElementById("submitPost").addEventListener("click", async () => {
     alert("Error creating post");
   }
 });
+// Fetch and display posts
+async function loadPosts() {
+  try {
+    const response = await fetch("/posts");
+    const posts = await response.json();
+
+    const postsContainer = document.getElementById("postsContainer");
+    postsContainer.innerHTML = "";
+
+    posts.forEach((post) => {
+      const postElement = document.createElement("div");
+      postElement.classList.add("post");
+      postElement.innerHTML = `
+        <h3>${post.title}</h3>
+        <p><strong>By:</strong> ${post.author}</p>
+        <p><strong>Created:</strong> ${new Date(
+          post.created_at
+        ).toLocaleString()}</p>
+        <div>${post.content}</div>
+      `;
+      postsContainer.appendChild(postElement);
+    });
+  } catch (error) {
+    console.error(error);
+    alert("Error loading posts");
+  }
+}
