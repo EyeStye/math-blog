@@ -1,6 +1,7 @@
 const express = require("express");
 const { createClient } = require("@libsql/client");
 const session = require("express-session");
+const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,13 +15,17 @@ const db = createClient({
 app.use(express.json());
 app.use(express.static("."));
 
+// Enable CORS if frontend served from another origin
+// Remove or adjust origin if using same domain
+app.use(cors({ origin: "*", credentials: true }));
+
 // Session middleware
 app.use(
   session({
-    secret: "your-secret-key", // Change this in production!
+    secret: "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set true if using HTTPS
+    cookie: { secure: false }, // true if HTTPS
   })
 );
 
@@ -42,11 +47,9 @@ app.use(
   }
 })();
 
-// Simple login route
+// Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-
-  // Hardcoded credentials for demo
   if (username === "admin" && password === "password123") {
     req.session.user = username;
     res.sendStatus(200);
@@ -55,7 +58,7 @@ app.post("/login", (req, res) => {
   }
 });
 
-// Logout route
+// Logout
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
     res.sendStatus(200);
@@ -68,15 +71,12 @@ app.get("/posts", async (req, res) => {
     const result = await db.execute(
       "SELECT title, content, author, created_at FROM posts ORDER BY id DESC"
     );
-
-    // Map Turso result.rows (array of arrays) to objects
     const posts = (result.rows || []).map((r) => ({
       title: r[0],
       content: r[1],
       author: r[2],
       created_at: r[3],
     }));
-
     res.json(posts);
   } catch (err) {
     console.error("Error fetching posts:", err);
