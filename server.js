@@ -11,20 +11,20 @@ const db = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-// Use session middleware
-app.use(
-  session({
-    secret: "your-secret-key", // Change this for production!
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false }, // Set true if using https in production
-  })
-);
-
 app.use(express.json());
 app.use(express.static("."));
 
-// Create table if not exists
+// Session middleware
+app.use(
+  session({
+    secret: "your-secret-key", // Change this in production!
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // set true if using HTTPS
+  })
+);
+
+// Ensure posts table exists
 (async () => {
   try {
     await db.execute(`
@@ -36,29 +36,29 @@ app.use(express.static("."));
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log("✅ Table created/updated");
+    console.log("✅ Table created/checked");
   } catch (err) {
     console.error("Table creation error:", err);
   }
 })();
 
-// Simple login route (no authentication library)
+// Simple login route
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  // Hardcoded credentials (for demo purposes)
+  // Hardcoded credentials for demo
   if (username === "admin" && password === "password123") {
-    req.session.user = username; // Store the username in session
-    res.sendStatus(200); // Successful login
+    req.session.user = username;
+    res.sendStatus(200);
   } else {
-    res.sendStatus(401); // Unauthorized
+    res.sendStatus(401);
   }
 });
 
-// Logout route to clear session
+// Logout route
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.sendStatus(200); // Successfully logged out
+    res.sendStatus(200);
   });
 });
 
@@ -68,23 +68,29 @@ app.get("/posts", async (req, res) => {
     const result = await db.execute(
       "SELECT title, content, author, created_at FROM posts ORDER BY id DESC"
     );
-    res.json(result.rows);
+
+    // Map Turso result.rows (array of arrays) to objects
+    const posts = (result.rows || []).map((r) => ({
+      title: r[0],
+      content: r[1],
+      author: r[2],
+      created_at: r[3],
+    }));
+
+    res.json(posts);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching posts:", err);
     res.sendStatus(500);
   }
 });
 
-// Save post (only if user is logged in)
+// Save a post (only if logged in)
 app.post("/posts", async (req, res) => {
-  if (!req.session.user) {
-    return res.status(403).send("You must be logged in to post.");
-  }
+  if (!req.session.user) return res.status(403).send("You must be logged in.");
 
   const { title, content } = req.body;
-  const author = req.session.user; // Use the logged-in username
+  const author = req.session.user;
 
-  // Validate the input
   if (!title || !content) return res.sendStatus(400);
 
   try {
@@ -92,14 +98,14 @@ app.post("/posts", async (req, res) => {
       sql: "INSERT INTO posts (title, content, author) VALUES (?, ?, ?)",
       args: [title, content, author],
     });
-    res.sendStatus(200); // Post created successfully
+    res.sendStatus(200);
   } catch (err) {
-    console.error(err);
-    res.sendStatus(500); // Server error
+    console.error("Error inserting post:", err);
+    res.sendStatus(500);
   }
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
