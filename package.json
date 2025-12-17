@@ -5,15 +5,9 @@
   "scripts": {
     "start": "node server.js"
   },
-  "engines": {
-    "node": "18.x"
-  },
   "dependencies": {
-    "@libsql/client": "^0.6.2",
-    "express": "^4.22.1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+    "@libsql/client": "^1.0.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.2"
+  }
 }

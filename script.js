@@ -37,3 +37,68 @@ function loadPosts() {
 
 updatePreview();
 loadPosts();
+// Handle login
+document.getElementById("loginButton").addEventListener("click", async () => {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (response.ok) {
+      alert("Login successful");
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("postForm").style.display = "block";
+      document.getElementById("logoutButton").style.display = "inline-block";
+    } else {
+      alert("Invalid login credentials");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error logging in");
+  }
+});
+
+// Handle logout
+document.getElementById("logoutButton").addEventListener("click", async () => {
+  try {
+    const response = await fetch("/logout", { method: "POST" });
+    if (response.ok) {
+      alert("Logged out");
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("postForm").style.display = "none";
+      document.getElementById("logoutButton").style.display = "none";
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error logging out");
+  }
+});
+
+// Handle post submission
+document.getElementById("submitPost").addEventListener("click", async () => {
+  const title = document.getElementById("title").value;
+  const content = document.getElementById("content").value;
+
+  try {
+    const response = await fetch("/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, content }),
+    });
+
+    if (response.ok) {
+      alert("Post created");
+      location.reload(); // Reload page to see the new post
+    } else {
+      alert("You must log in to create a post");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error creating post");
+  }
+});

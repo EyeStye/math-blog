@@ -23,6 +23,29 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Login Form -->
+    <div id="loginForm">
+      <input type="text" id="username" placeholder="Username" required /><br />
+      <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        required
+      /><br />
+      <button id="loginButton">Login</button>
+      <button id="logoutButton" style="display: none">Logout</button>
+    </div>
+
+    <!-- Post Form (visible after login) -->
+    <div id="postForm" style="display: none">
+      <input type="text" id="title" placeholder="Title" required /><br />
+      <textarea id="content" placeholder="Content" required></textarea><br />
+      <button id="submitPost">Post</button>
+    </div>
+
+    <!-- Posts List -->
+    <h2>Recent Posts</h2>
+    <div id="postsContainer"></div>
     <div class="editor-container">
       <textarea id="editor" placeholder="Type math here..."></textarea>
       <div id="preview"></div>
