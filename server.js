@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // SQLite database (file will be created automatically)
-const db = new sqlite3.Database("posts.db");
+const db = new sqlite3.Database("/data/posts.db");
 
 app.use(express.json());
 app.use(express.static("."));
